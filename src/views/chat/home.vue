@@ -1,7 +1,7 @@
 <!--
  * @Author: YinXuan
  * @Date: 2025-08-20 13:57:33
- * @LastEditTime: 2025-08-21 18:05:44
+ * @LastEditTime: 2025-08-22 11:46:14
  * @Description: 聊天首页
 -->
 <script setup lang="ts">
@@ -17,7 +17,9 @@ const deviceInfo = ref({
   isIOS: false,
   isAndroid: false,
   isWechat: false,
-  isMobile: false
+  isMobile: false,
+  browser: 'Unknown',
+  isSafari: false
 })
 
 // 聊天消息列表
@@ -77,15 +79,31 @@ onMounted(() => {
 // 检测设备类型
 const detectDevice = () => {
   const userAgent = navigator.userAgent.toLowerCase()
+  const vendor = navigator.vendor
+
+  // 检测浏览器
+  let browser = 'Unknown'
+  let isSafari = false
+
+  if (vendor && vendor.indexOf('Apple') > -1) {
+    browser = 'Safari'
+    isSafari = true
+  } else if (userAgent.includes('chrome') && !userAgent.includes('edg')) {
+    browser = 'Chrome'
+  } else if (userAgent.includes('firefox')) {
+    browser = 'Firefox'
+  } else if (userAgent.includes('edg')) {
+    browser = 'Edge'
+  }
 
   deviceInfo.value = {
     isIOS: /iphone|ipad|ipod/.test(userAgent),
     isAndroid: /android/.test(userAgent),
     isWechat: /micromessenger/.test(userAgent),
-    isMobile: /mobile|android|iphone|ipad/.test(userAgent)
+    isMobile: /mobile|android|iphone|ipad/.test(userAgent),
+    browser,
+    isSafari
   }
-
-  console.log('设备信息:', deviceInfo.value)
 }
 
 // 下载或打开APP
@@ -192,7 +210,7 @@ const showMaskGuide = (message: string) => {
               <div class="message-text">
                 {{ message.content }}
                 <!-- 如果有图片URL，显示虚化背景和锁 -->
-                <div v-if="message.url" class="message-image-lock">
+                <div v-if="message.url" class="message-image-lock" @click="handleDownloadApp">
                   <div class="blur-bg" :style="{ backgroundImage: `url(${message.url})` }"></div>
                   <div class="lock-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
@@ -217,9 +235,17 @@ const showMaskGuide = (message: string) => {
           </div>
         </div>
       </div>
-      <div class="input_box">
+      <div
+        class="input_box"
+        :style="{
+          padding:
+            deviceInfo.isSafari && !deviceInfo.isWechat
+              ? '0.08rem 0.12rem 0.9rem 0.12rem'
+              : '0.08rem 0.12rem 0.4rem 0.12rem'
+        }"
+      >
         <div class="input_wrapper">
-          <div class="input_cell">
+          <div class="input_cell" @click.prevent.stop="handleDownloadApp">
             <input
               type="text"
               disabled
@@ -498,8 +524,7 @@ const showMaskGuide = (message: string) => {
       width: 100%;
       // height: 0.6rem;
       flex: none;
-      padding: 0.08rem 0.12rem 0.4rem 0.12rem;
-
+      // padding 现在通过动态样式根据浏览器类型设置
       display: flex;
       align-items: center;
       .input_wrapper {
@@ -529,6 +554,7 @@ const showMaskGuide = (message: string) => {
             caret-color: #ffd980;
             box-sizing: border-box;
             display: block; // 确保input正确显示
+            pointer-events: none; // 禁用鼠标事件，让点击事件传递到父级
 
             &::placeholder {
               color: rgba(255, 255, 255, 0.9); // 更亮的灰白色placeholder
