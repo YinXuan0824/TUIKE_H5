@@ -1,0 +1,125 @@
+.query_btn {
+  width: 80px;
+  height: 36px;
+  line-height: 36px;
+  background: #2969c2;
+  border: none;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 400;
+  font-size: 14px;
+  color: #ffffff;
+  &:hover,
+  &:focus,
+  &:active {
+    color: #fff;
+    background: #0f50ab;
+  }
+}
+
+.reset_btn {
+  width: 80px;
+  height: 36px;
+  line-height: 36px;
+  background: #ff8c00;
+  border: 1px solid #ff8c00;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 400;
+  font-size: 14px;
+  color: #fff;
+  &:hover,
+  &:focus,
+  &:active {
+    color: #fff;
+    border: 1px solid #f38a0a;
+    background: #f38a0a;
+  }
+}
+
+.operate_btn {
+  font-size: 18px;
+  color: #8a8a8a;
+  &:hover {
+    color: #0f50ab;
+  }
+}
+.add_btn {
+  width: 80px;
+  height: 36px;
+  line-height: 36px;
+  background: #36c9b7ff;
+  border: 1px solid #36c9b7ff;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 400;
+  font-size: 14px;
+  color: #fff;
+  &:hover,
+  &:focus,
+  &:active {
+    color: #fff;
+    border: 1px solid #36c9b7ff;
+    background: #36c9b7ff;
+  }
+}
+
+.del_btn {
+  width: 80px;
+  height: 36px;
+  line-height: 36px;
+  background: #ff3838 !important;
+  border: 1px solid #ff3838 !important;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 400;
+  font-size: 14px;
+  color: #fff !important;
+  &:hover,
+  &:focus,
+  &:active {
+    color: #fff;
+    border: 1px solid #ff3838;
+    background: #ff3838;
+  }
+}
+
+.purple_btn {
+  width: 80px;
+  height: 36px;
+  line-height: 36px;
+  background: #6017ce;
+  border: 1px solid #6017ce;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 400;
+  font-size: 14px;
+  color: #fff;
+  &:hover,
+  &:focus,
+  &:active {
+    color: #fff;
+    border: 1px solid #a370f0;
+    background: #a370f0;
+  }
+}
+
+.export_btn {
+  width: 80px;
+  height: 36px;
+  line-height: 36px;
+  background: #0aa772;
+  border: 1px solid #0aa772;
+  border-radius: 6px;
+  text-align: center;
+  font-weight: 400;
+  font-size: 14px;
+  color: #fff;
+  &:hover,
+  &:focus,
+  &:active {
+    color: #fff;
+    border: 1px solid #2dd69e;
+    background: #2dd69e;
+  }
+}

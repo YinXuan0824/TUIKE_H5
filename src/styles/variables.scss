@@ -1,0 +1,28 @@
+// 全局SCSS变量
+:root {
+  // --menuBg: rgba(27, 43, 94, 0.8);
+  --menuBgT: rgba(27, 43, 94, 0.6);
+  // --menuBg: linear-gradient(90deg, #03a9f4, #f441a5, #ffeb3b, #03a9f4);
+  // --menuBg: #42c3af;
+  --menuText: rgba(86, 93, 106, 1);
+  --menuActiveText: #ffc15e;
+  --menuHover: rgba(42, 43, 45, 0.6);
+  --subMenuBg: rgba(27, 43, 94, 0.8);
+  --textHover: #ffffff;
+  --subMenuActiveText: rgba(86, 93, 106, 1);
+  --subMenuHover: rgba(42, 43, 45, 0.6);
+}
+
+$menuBg: var(--menuBg);
+$menuBgT: var(--menuBgT);
+$menuText: var(--menuText);
+$menuActiveText: var(--menuActiveText);
+$menuHover: var(--menuHover);
+$subMenuBg: var(--subMenuBg);
+$subMenuActiveText: var(--subMenuActiveText);
+$subMenuHover: var(--subMenuHover);
+$sideBarWidth: 180px;
+$menuBorderRadius: 16px;
+$textHover: var(--textHover);
+$subBg: linear-gradient(180deg, #2969c2 0%, #0f50ab 100%);
+$filterText: brightness(1.1);
