@@ -1,7 +1,7 @@
 /*
  * @Author: YinXuan/WUYuHan
  * @Date: 2023-10-24 09:36:33
- * @LastEditTime: 2025-08-20 16:28:01
+ * @LastEditTime: 2025-08-27 10:15:25
  * @Description: WebPage API
  */
 import reqWeb from '@/utils/reqWeb'
@@ -25,6 +25,17 @@ export function getAigcRecommendLivesList(queryParams: any) {
 export function getAigcOtherLiveVideos(queryParams: any) {
   return reqWeb({
     url: '/api/aigc_other_live_videos/',
+    method: 'get',
+    params: queryParams
+  })
+}
+
+/**
+ * 获取AI智能体详情
+ */
+export function getAigcOtherLivesList(queryParams: any) {
+  return reqWeb({
+    url: '/api/aigc_other_lives_list/',
     method: 'get',
     params: queryParams
   })

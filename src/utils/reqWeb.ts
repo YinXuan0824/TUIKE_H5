@@ -1,7 +1,7 @@
 /*
  * @Author: YinXuan
  * @Date: 2023-07-11 12:20:30
- * @LastEditTime: 2025-08-21 18:08:57
+ * @LastEditTime: 2025-08-27 14:15:38
  * @Description: 初始化项目
  */
 import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios'
@@ -42,7 +42,7 @@ service.interceptors.response.use(
     //   message.error('当前页面已失效，请重新登录~')
     //   return Promise.reject(response.data)
     // }
-    message.error(msg || '系统出错，请稍后重试~')
+    // message.error(msg || '系统出错，请稍后重试~')
     return Promise.reject(new Error(msg || 'Error'))
   },
   (error: any) => {
@@ -58,7 +58,7 @@ service.interceptors.response.use(
           window.location.href = '/busLogin'
         })
       } else {
-        message.error(msg || '系统出错，请稍后重试~')
+        // message.error(msg || '系统出错，请稍后重试~')
       }
     }
     return Promise.reject(error.message)

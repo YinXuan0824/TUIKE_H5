@@ -1,15 +1,26 @@
 <!--
  * @Author: YinXuan
  * @Date: 2025-08-20 13:57:33
- * @LastEditTime: 2025-08-22 11:46:14
+ * @LastEditTime: 2025-08-27 14:01:36
  * @Description: 聊天首页
 -->
 <script setup lang="ts">
-import { getAigcOtherLiveVideos } from '@/api/webPage'
+import { getAigcOtherLiveVideos, getAigcOtherLivesList } from '@/api/webPage'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const liveId = route.query.liveId
+
+const redirectTo = decodeURIComponent(route.query.redirectTo as string)
+
+// 从 redirectTo 中提取 智能体ID: agentId 和 语言 lan: zh en
+let liveId: any
+let lan: any = ref('')
+if (redirectTo && redirectTo.includes('agentId=')) {
+  const urlParams = new URLSearchParams(redirectTo.split('?')[1])
+  liveId = urlParams.get('agentId') || route.query.agentId
+  lan.value = urlParams.get('lan') || 'zh' // 默认中文
+}
+
 let liveData: any = ref([])
 
 // 设备检测
@@ -26,27 +37,22 @@ const deviceInfo = ref({
 const messageList = ref([
   {
     id: 1,
-    type: 'ai',
-    content: '您好！我是推氪AI，请问有什么可以帮助您的呢？'
-  },
-  {
-    id: 2,
     type: 'user',
     content: '发个视频～'
   },
   {
-    id: 3,
+    id: 2,
     type: 'ai',
     content: '哎呀~这么心急可不行呢，让我想想...啊!这张在复古浴室穿黄丝吊带的怎么样?纱袖若隐若现最勾人了~',
     url: 'https://smsaas.oss-cn-hangzhou.aliyuncs.com/document/1754273840880.mp4?x-oss-process=video/snapshot,t_1,f_jpg,m_fast,ar_auto'
   },
   {
-    id: 4,
+    id: 3,
     type: 'user',
     content: '发个照片～'
   },
   {
-    id: 5,
+    id: 4,
     type: 'ai',
     content: '(轻轻歪头)这么想看呀?那给你看这张在海边穿深V挂脖裙的，拎着裙摆笑得超甜~',
     url: 'https://smsaas.oss-cn-hangzhou.aliyuncs.com/document/1754036458432.jpeg'
@@ -56,8 +62,13 @@ const messageList = ref([
 // APP下载链接
 const appDownloadUrls = {
   ios: 'https://apps.apple.com/us/app/tuikor-ai/id6470340604', // iOS App Store链接
-  android: 'https://smjzt.oss-cn-hangzhou.aliyuncs.com/Download/kolmint_v111.apk' // 安卓APK直接下载链接
+  android: 'https://smjzt.oss-cn-hangzhou.aliyuncs.com/Download/tuikor_mainland.apk' // 安卓APK直接下载链接
 }
+
+// APP的URL Scheme（需要与APP端配置一致）
+const appScheme = 'tuikor://' + redirectTo
+
+let subTitle = ref('')
 
 onMounted(() => {
   // 检测设备信息
@@ -73,6 +84,39 @@ onMounted(() => {
     if (data.length > 0) {
       liveData.value = data[0]
     }
+  })
+
+  getAigcOtherLivesList({
+    from: 'miniprogram',
+    id: liveId
+  }).then(res => {
+    const { data } = res
+    console.log('data', data)
+    if (data.length > 0) {
+      subTitle.value = data[0].sub_title
+    }
+  })
+
+  // 监听页面可见性变化，当用户切换应用时隐藏提示
+  const handlePageVisibilityChange = () => {
+    if (document.hidden || (document as any).webkitHidden) {
+      hideLoading()
+      console.log('页面被隐藏，清理提示')
+    }
+  }
+
+  document.addEventListener('visibilitychange', handlePageVisibilityChange)
+
+  // 保存监听器引用，用于清理
+  const cleanupVisibilityListener = () => {
+    document.removeEventListener('visibilitychange', handlePageVisibilityChange)
+  }
+
+  // 页面离开时清理
+  onUnmounted(() => {
+    hideLoading()
+    cleanupVisibilityListener()
+    console.log('页面离开，清理所有提示和监听器')
   })
 })
 
@@ -96,17 +140,23 @@ const detectDevice = () => {
     browser = 'Edge'
   }
 
+  // 更准确的移动设备检测
+  const isIOS = /iphone|ipad|ipod/.test(userAgent)
+  const isAndroid = /android/.test(userAgent)
+  const isWechat = /micromessenger/.test(userAgent)
+  const isMobile = isIOS || isAndroid || /mobile/.test(userAgent)
+
   deviceInfo.value = {
-    isIOS: /iphone|ipad|ipod/.test(userAgent),
-    isAndroid: /android/.test(userAgent),
-    isWechat: /micromessenger/.test(userAgent),
-    isMobile: /mobile|android|iphone|ipad/.test(userAgent),
+    isIOS,
+    isAndroid,
+    isWechat,
+    isMobile,
     browser,
     isSafari
   }
 }
 
-// 下载或打开APP
+// 智能打开或下载APP
 const handleDownloadApp = () => {
   if (deviceInfo.value.isWechat) {
     // 微信内提示去浏览器打开
@@ -114,15 +164,197 @@ const handleDownloadApp = () => {
     return
   }
 
-  // 根据设备类型跳转到相应的下载页面
-  const downloadUrl = deviceInfo.value.isIOS ? appDownloadUrls.ios : appDownloadUrls.android
-
   if (deviceInfo.value.isMobile) {
-    // 移动端直接跳转
-    window.location.href = downloadUrl
+    // 移动端：尝试打开APP，失败则下载
+    console.log('移动端设备，尝试打开APP')
+    if (deviceInfo.value.isSafari) {
+      showLoading('正在跳转App Store...')
+    } else {
+      showLoading('正在打开APP...')
+    }
+    smartOpenApp()
   } else {
     // PC端提示
+    console.log('PC端设备，显示提示')
     showToast('请使用默认浏览器打开并下载～')
+  }
+}
+
+// 智能打开APP或下载
+const smartOpenApp = () => {
+  if (deviceInfo.value.isIOS) {
+    // iOS设备：先尝试打开APP，失败则跳转App Store
+    console.log('iOS设备，尝试打开APP')
+    tryOpenApp(appScheme, appDownloadUrls.ios)
+  } else if (deviceInfo.value.isAndroid) {
+    // Android: 尝试打开APP，失败则下载APK
+    tryOpenApp(appScheme, appDownloadUrls.android)
+  }
+}
+
+// 尝试打开APP，失败则执行fallback
+const tryOpenApp = (scheme: string, fallbackUrl: string) => {
+  // 标记是否已执行fallback
+  let fallbackExecuted = false
+
+  // 标记是否已检测到APP打开
+  let appOpened = false
+
+  // 记录页面焦点状态
+  let pageHasFocus = true
+
+  // 记录用户是否进行了交互（点击、触摸等）
+  let userInteracted = false
+
+  // 监听页面可见性变化
+  const handleVisibilityChange = () => {
+    if (document.hidden || (document as any).webkitHidden) {
+      console.log('✅ APP已打开（页面被隐藏）')
+      appOpened = true
+      // 清理所有监听器
+      cleanupListeners()
+      // 隐藏加载状态
+      hideLoading()
+    }
+  }
+
+  // 监听页面失去焦点
+  const handleBlur = () => {
+    console.log('✅ APP已打开（页面失去焦点）')
+    appOpened = true
+    // 清理所有监听器
+    cleanupListeners()
+    // 隐藏加载状态
+    hideLoading()
+  }
+
+  // 添加页面可见性变化监听器
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('blur', handleBlur)
+
+  // 监听用户交互，如果用户点击了其他地方，可能APP已经打开
+  const handleUserInteraction = () => {
+    userInteracted = true
+    // 移除交互监听器
+    document.removeEventListener('click', handleUserInteraction)
+    document.removeEventListener('touchstart', handleUserInteraction)
+  }
+
+  document.addEventListener('click', handleUserInteraction)
+  document.addEventListener('touchstart', handleUserInteraction)
+
+  // 尝试打开APP
+  try {
+    if (deviceInfo.value.isIOS) {
+      // iOS设备：先尝试iframe方式，再尝试location.href
+      console.log('iOS设备：尝试iframe方式打开APP...')
+
+      // 创建隐藏的iframe
+      const iframe = document.createElement('iframe')
+      iframe.style.display = 'none'
+      iframe.src = scheme
+      document.body.appendChild(iframe)
+
+      // 延迟移除iframe
+      setTimeout(() => {
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe)
+        }
+      }, 1000)
+
+      // 延迟后如果APP还没打开，再尝试location.href
+      setTimeout(() => {
+        if (!appOpened && !fallbackExecuted) {
+          console.log('iOS设备：iframe方式无响应，尝试location.href...')
+          window.location.href = scheme
+        }
+      }, 300)
+    } else {
+      // Android直接使用location.href
+      window.location.href = scheme
+      console.log('Android: 直接发送Scheme，等待响应...')
+    }
+  } catch (error) {
+    console.error('发送Scheme失败:', error)
+    // 如果发送失败，直接执行fallback
+    executeFallback()
+    return
+  }
+
+  // 延迟检查是否成功打开 - 优化等待时间
+  setTimeout(() => {
+    console.log('⏰ 1秒后检查APP是否打开')
+    if (fallbackExecuted || appOpened) return // 防止重复执行或APP已打开
+
+    // 如果APP已经打开，直接返回
+    if (appOpened) {
+      console.log('✅ APP已打开，无需执行fallback')
+      return
+    }
+
+    // 如果页面被隐藏，说明APP已打开
+    if (document.hidden || (document as any).webkitHidden) {
+      appOpened = true
+      return
+    }
+
+    // 如果用户进行了交互，可能APP已经打开，再等一下
+    if (userInteracted) {
+      console.log('⏳ 用户已交互，可能APP已打开，再等待0.5秒...')
+      setTimeout(() => {
+        if (!fallbackExecuted && !appOpened && !document.hidden) {
+          console.log('⏰ 用户交互后仍未打开，执行fallback')
+          executeFallback()
+        }
+      }, 500)
+      return
+    }
+
+    // 如果页面还在且无用户交互，可能APP正在打开中，再等一下
+    console.log('⏳ 等待APP启动，再等待0.5秒...')
+    setTimeout(() => {
+      if (!fallbackExecuted && !appOpened && !document.hidden) {
+        console.log('⏰ 额外等待后仍未打开，执行fallback')
+        executeFallback()
+      }
+    }, 500)
+  }, 1000) // 1秒后检查
+
+  // 强制fallback保护机制 - 确保最终能跳转
+  setTimeout(() => {
+    if (!fallbackExecuted && !appOpened) {
+      console.log('🛡️ 强制fallback保护机制触发')
+      executeFallback()
+    }
+  }, 3000) // 3秒后强制执行fallback
+
+  // 执行fallback的函数
+  function executeFallback() {
+    if (fallbackExecuted || appOpened) return
+    fallbackExecuted = true
+
+    // 清理所有监听器
+    cleanupListeners()
+
+    // 隐藏加载状态
+    hideLoading()
+
+    console.log('🚀 执行fallback，跳转下载页面')
+    if (deviceInfo.value.isIOS) {
+      console.log('📱 iOS设备，跳转App Store')
+      window.location.href = fallbackUrl
+    } else {
+      console.log('🤖 Android设备，下载APK')
+      window.location.href = fallbackUrl
+    }
+  }
+
+  // 清理所有监听器的函数
+  function cleanupListeners() {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+    window.removeEventListener('blur', handleBlur)
+    document.removeEventListener('click', handleUserInteraction)
+    document.removeEventListener('touchstart', handleUserInteraction)
   }
 }
 
@@ -130,6 +362,23 @@ const handleDownloadApp = () => {
 const showToast = (message: string) => {
   // 创建遮罩提示
   showMaskGuide(message)
+}
+
+// 显示加载状态
+const showLoading = (message: string) => {
+  // 创建加载提示
+  showMaskGuide(message)
+}
+
+// 隐藏加载状态
+const hideLoading = () => {
+  // 移除所有mask-guide元素
+  const masks = document.querySelectorAll('.mask-guide')
+  masks.forEach(mask => {
+    if (document.body.contains(mask)) {
+      document.body.removeChild(mask)
+    }
+  })
 }
 
 // 显示遮罩引导
@@ -176,29 +425,34 @@ const showMaskGuide = (message: string) => {
     :style="{ backgroundImage: `url(${liveData.video_img})`, backgroundSize: 'cover', backgroundPosition: 'center' }"
   >
     <div class="home_bg">
-      <video :src="liveData.video_url" autoplay muted loop></video>
+      <!-- <video :src="liveData.video_url" autoplay muted loop></video> -->
     </div>
     <div class="home_content">
       <div class="home_content_bar">
         <div class="home_content_bar_left">
           <img src="@/assets/chat/logo.png" class="logo" alt="" />
           <div class="title_box">
-            <div class="title">推氪AI</div>
-            <div class="desc">基于AIGC驱动</div>
+            <div class="title">{{ lan === 'zh' ? '推氪AI' : 'Tuikor AI' }}</div>
+            <div class="desc">{{ lan === 'zh' ? '全天候与你的偶像聊天' : '24/7 chat with your idol' }}</div>
           </div>
         </div>
         <div class="home_content_bar_right">
-          <div class="right_btn" @click="handleDownloadApp">下载APP</div>
+          <div class="right_btn" @click="handleDownloadApp">{{ lan === 'zh' ? '下载APP' : 'Download APP' }}</div>
         </div>
       </div>
       <div class="message_box">
-        <div class="notice">内容由AI生成，使用时请遵守平台社区公约</div>
-        <div class="introduce">
-          <div class="content">
-            <span class="title">简介:&nbsp;</span>
-            推氪AI，是神马工场旗下行业领先的AI数字人智能体平台。平台隶属上海徽源智能科技有限公司、上海推氪智能科技有限公司（VIE架构主体）。公司成立于2020年，核心团队来自腾讯、字节、阿里等知名互联网公司，公司已完成由创业工场、万物为、华山资本、第九城市等VC机构领投的B轮1500万美元融资，公司致力于通过AI科技不断创新探索，为人类提供跨时代的交互体验~
-          </div>
+        <div class="notice">
+          {{ lan === 'zh' ? '内容由AI生成' : 'Content generated by AI' }}
         </div>
+        <template v-if="subTitle">
+          <div class="introduce">
+            <div class="content">
+              <span class="title">简介:&nbsp;</span>
+              {{ subTitle }}
+              <!-- 推氪AI，是神马工场旗下行业领先的AI数字人智能体平台。平台隶属上海徽源智能科技有限公司、上海推氪智能科技有限公司（VIE架构主体）。公司成立于2020年，核心团队来自腾讯、字节、阿里等知名互联网公司，公司已完成由创业工场、万物为、华山资本、第九城市等VC机构领投的B轮1500万美元融资，公司致力于通过AI科技不断创新探索，为人类提供跨时代的交互体验~ -->
+            </div>
+          </div>
+        </template>
         <div class="message_list">
           <div
             v-for="message in messageList"
@@ -250,7 +504,7 @@ const showMaskGuide = (message: string) => {
               type="text"
               disabled
               class="send_input"
-              placeholder="发消息给推氪AI吧，回复由AI生成"
+              :placeholder="lan === 'zh' ? '发消息给推氪AI' : 'Send message to Tuikor AI'"
               enterkeyhint="send"
               value=""
             />
@@ -268,7 +522,7 @@ const showMaskGuide = (message: string) => {
   height: 100vh;
   overflow: hidden;
   width: 100vw;
-
+  background-color: #1c1d20;
   .home_bg {
     width: 100%;
     height: 100%;
@@ -537,11 +791,17 @@ const showMaskGuide = (message: string) => {
           flex: 1;
           border-radius: 0.12rem;
           padding: 0.12rem 0;
-          background: rgba(255, 255, 255, 0.3490196078);
+          background: linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0.2) 0%,
+            rgba(200, 200, 200, 0.7) 10%,
+            rgba(100, 100, 100, 0.8) 100%
+          );
           height: 0.44rem;
           display: flex; // 添加flex布局
           align-items: center; // 垂直居中
           box-sizing: border-box; // 确保padding不影响总尺寸
+          box-shadow: 0 0.02rem 0.06rem rgba(0, 0, 0, 0.1);
           .send_input {
             width: 100%;
             height: 100%;
@@ -549,14 +809,16 @@ const showMaskGuide = (message: string) => {
             padding: 0 0.16rem;
             background: transparent;
             outline: none;
-            font-size: 0.14rem;
+            font-size: 0.16rem;
             color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 0 0.01rem rgba(255, 255, 255, 0.8);
             caret-color: #ffd980;
             box-sizing: border-box;
             display: block; // 确保input正确显示
             pointer-events: none; // 禁用鼠标事件，让点击事件传递到父级
 
             &::placeholder {
+              text-align: center;
               color: rgba(255, 255, 255, 0.9); // 更亮的灰白色placeholder
             }
           }
@@ -629,8 +891,6 @@ html {
   .guide-content {
     position: relative;
     text-align: right;
-    color: white;
-    max-width: 60%;
 
     .arrow-top-right {
       margin: -0.85rem 0.2rem 0.08rem auto;
@@ -640,28 +900,29 @@ html {
       svg {
         width: 0.16rem;
         height: 0.16rem;
-        filter: drop-shadow(0 0.01rem 0.02rem rgba(0, 0, 0, 0.5));
+        filter: drop-shadow(0 0.01rem 0.02rem rgba(255, 255, 255, 0.5));
       }
     }
 
     .guide-text {
       font-size: 0.14rem;
       font-weight: 500;
-      margin-bottom: 0.08rem;
-      text-shadow: 0 0.01rem 0.02rem rgba(0, 0, 0, 0.5);
+      // margin-bottom: 0.08rem;
+      text-shadow: none;
       line-height: 1.3;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(255, 255, 255, 0.9);
+      color: rgba(0, 0, 0, 0.9);
       padding: 0.08rem 0.12rem;
       border-radius: 0.08rem;
       backdrop-filter: blur(0.1rem);
-      white-space: nowrap;
+      // white-space: nowrap;
     }
 
     .guide-tip {
       font-size: 0.11rem;
-      color: rgba(255, 255, 255, 0.7);
-      opacity: 0.8;
-      background: rgba(255, 255, 255, 0.1);
+      color: rgba(0, 0, 0, 0.7);
+      opacity: 0.9;
+      background: rgba(255, 255, 255, 0.9);
       padding: 0.06rem 0.1rem;
       border-radius: 0.06rem;
       display: inline-block;

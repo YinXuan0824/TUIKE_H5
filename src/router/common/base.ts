@@ -1,7 +1,7 @@
 /*
  * @Author: YinXuan
  * @Date: 2023-07-19 10:35:09
- * @LastEditTime: 2025-08-21 11:47:44
+ * @LastEditTime: 2025-08-26 12:11:53
  * @Description:
  */
 export const Layout = () => import('@/layout/index.vue')
@@ -57,41 +57,5 @@ export const indexRouter: any = [
     name: 'chat',
     component: () => import('@/views/chat/home.vue'),
     meta: { title: '推氪AI', hidden: true }
-  },
-  {
-    path: '/busLogin',
-    name: 'busLogin',
-    component: () => import('@/views/busManage/busLogin.vue'),
-    meta: { title: '无人小巴登录', hidden: true }
-  },
-  {
-    path: '/busFeedback',
-    name: 'busFeedback',
-    component: () => import('@/views/busManage/busFeedback.vue'),
-    meta: { title: '无人小巴反馈', hidden: true }
-  },
-  {
-    path: '/busReserve',
-    name: 'busReserve',
-    component: () => import('@/views/busManage/busReserve.vue'),
-    meta: { title: '无人小巴预约', hidden: true }
-  },
-  {
-    path: '/vipReserve',
-    name: 'vipReserve',
-    component: () => import('@/views/busManage/vipReserve.vue'),
-    meta: { title: '点对点模式预约', hidden: true }
-  },
-  {
-    path: '/stationReserve',
-    name: 'stationReserve',
-    component: () => import('@/views/busManage/stationReserve.vue'),
-    meta: { title: '预约点模式预约', hidden: true }
-  },
-  {
-    path: '/busDrivingRoute',
-    name: 'busDrivingRoute',
-    component: () => import('@/views/busManage/busDrivingRoute.vue'),
-    meta: { title: '无人小巴导航', hidden: true }
   }
 ]

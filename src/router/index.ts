@@ -1,15 +1,15 @@
 /*
  * @Author: YinXuan
  * @Date: 2023-07-11 12:19:46
- * @LastEditTime: 2024-12-25 15:11:11
+ * @LastEditTime: 2025-08-26 12:11:13
  * @Description:
  */
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import { indexRouter, operateManageRouter, systemManageRouter } from './common/index'
+import { indexRouter } from './common/index'
 export const Layout = () => import('@/layout/index.vue')
 
 // 静态路由
-export const constantRoutes: RouteRecordRaw[] = [...indexRouter, ...operateManageRouter, ...systemManageRouter]
+export const constantRoutes: RouteRecordRaw[] = [...indexRouter]
 
 /**
  * 创建路由
