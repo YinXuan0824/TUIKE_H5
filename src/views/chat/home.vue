@@ -1,7 +1,7 @@
 <!--
  * @Author: YinXuan
  * @Date: 2025-08-20 13:57:33
- * @LastEditTime: 2025-08-27 14:01:36
+ * @LastEditTime: 2025-08-27 18:09:10
  * @Description: 聊天首页
 -->
 <script setup lang="ts">
@@ -14,7 +14,7 @@ const redirectTo = decodeURIComponent(route.query.redirectTo as string)
 
 // 从 redirectTo 中提取 智能体ID: agentId 和 语言 lan: zh en
 let liveId: any
-let lan: any = ref('')
+let lan: any = ref('zh')
 if (redirectTo && redirectTo.includes('agentId=')) {
   const urlParams = new URLSearchParams(redirectTo.split('?')[1])
   liveId = urlParams.get('agentId') || route.query.agentId
@@ -38,23 +38,29 @@ const messageList = ref([
   {
     id: 1,
     type: 'user',
-    content: '发个视频～'
+    content: lan.value === 'zh' ? '发个视频～' : 'Send a video～'
   },
   {
     id: 2,
     type: 'ai',
-    content: '哎呀~这么心急可不行呢，让我想想...啊!这张在复古浴室穿黄丝吊带的怎么样?纱袖若隐若现最勾人了~',
+    content:
+      lan.value === 'zh'
+        ? '哎呀~这么心急可不行呢，让我想想...啊!这张在复古浴室穿黄丝吊带的怎么样?纱袖若隐若现最勾人了~'
+        : 'Oops~ You can’t be too impatient. Let me think... Ah! How about this one in a yellow silk dress with a slit in the bathroom? The sheer sleeves are most alluring~',
     url: 'https://smsaas.oss-cn-hangzhou.aliyuncs.com/document/1754273840880.mp4?x-oss-process=video/snapshot,t_1,f_jpg,m_fast,ar_auto'
   },
   {
     id: 3,
     type: 'user',
-    content: '发个照片～'
+    content: lan.value === 'zh' ? '发个照片～' : 'Send a photo～'
   },
   {
     id: 4,
     type: 'ai',
-    content: '(轻轻歪头)这么想看呀?那给你看这张在海边穿深V挂脖裙的，拎着裙摆笑得超甜~',
+    content:
+      lan.value === 'zh'
+        ? '(轻轻歪头)这么想看呀?那给你看这张在海边穿深V挂脖裙的，拎着裙摆笑得超甜~'
+        : '(tilts head cutely)You want to see it? Here, take this one in a deep V-neck halter dress on the beach, holding the skirt and smiling sweetly~',
     url: 'https://smsaas.oss-cn-hangzhou.aliyuncs.com/document/1754036458432.jpeg'
   }
 ])
@@ -168,7 +174,7 @@ const handleDownloadApp = () => {
     // 移动端：尝试打开APP，失败则下载
     console.log('移动端设备，尝试打开APP')
     if (deviceInfo.value.isSafari) {
-      showLoading('正在跳转App Store...')
+      showLoading('正在跳转App...')
     } else {
       showLoading('正在打开APP...')
     }
@@ -194,167 +200,137 @@ const smartOpenApp = () => {
 
 // 尝试打开APP，失败则执行fallback
 const tryOpenApp = (scheme: string, fallbackUrl: string) => {
-  // 标记是否已执行fallback
+  let appOpened = false
   let fallbackExecuted = false
 
-  // 标记是否已检测到APP打开
-  let appOpened = false
+  // 显示加载状态
+  // showLoading('正在打开APP...')
 
-  // 记录页面焦点状态
-  let pageHasFocus = true
-
-  // 记录用户是否进行了交互（点击、触摸等）
-  let userInteracted = false
-
-  // 监听页面可见性变化
-  const handleVisibilityChange = () => {
+  // 检测APP是否打开的函数
+  const checkAppOpened = () => {
     if (document.hidden || (document as any).webkitHidden) {
-      console.log('✅ APP已打开（页面被隐藏）')
       appOpened = true
-      // 清理所有监听器
-      cleanupListeners()
-      // 隐藏加载状态
+      console.log('✅ APP已打开')
       hideLoading()
+      return true
+    }
+    return false
+  }
+
+  // 监听页面失去焦点（APP打开时页面会失去焦点）
+  const handleBlur = () => {
+    if (!appOpened && !fallbackExecuted) {
+      // 延迟检测，避免误判
+      setTimeout(() => {
+        if (document.hidden || (document as any).webkitHidden) {
+          appOpened = true
+          console.log('✅ APP已打开（页面失去焦点）')
+          hideLoading()
+          // 清理事件监听器
+          window.removeEventListener('blur', handleBlur)
+          document.removeEventListener('visibilitychange', handleVisibilityChange)
+        } else {
+          console.log('⚠️ 页面失去焦点但未隐藏，可能是误判')
+        }
+      }, 500)
     }
   }
 
-  // 监听页面失去焦点
-  const handleBlur = () => {
-    console.log('✅ APP已打开（页面失去焦点）')
-    appOpened = true
-    // 清理所有监听器
-    cleanupListeners()
-    // 隐藏加载状态
+  // 执行fallback的函数
+  const executeFallback = () => {
+    if (fallbackExecuted || appOpened) return
+    fallbackExecuted = true
     hideLoading()
+    console.log('🚀 执行fallback，跳转下载页面')
+
+    if (deviceInfo.value.isIOS) {
+      // iOS设备：在当前页面跳转App Store
+      window.location.href = fallbackUrl
+    } else {
+      // Android设备：下载APK
+      window.location.href = fallbackUrl
+    }
   }
-
-  // 添加页面可见性变化监听器
-  document.addEventListener('visibilitychange', handleVisibilityChange)
-  window.addEventListener('blur', handleBlur)
-
-  // 监听用户交互，如果用户点击了其他地方，可能APP已经打开
-  const handleUserInteraction = () => {
-    userInteracted = true
-    // 移除交互监听器
-    document.removeEventListener('click', handleUserInteraction)
-    document.removeEventListener('touchstart', handleUserInteraction)
-  }
-
-  document.addEventListener('click', handleUserInteraction)
-  document.addEventListener('touchstart', handleUserInteraction)
 
   // 尝试打开APP
   try {
     if (deviceInfo.value.isIOS) {
-      // iOS设备：先尝试iframe方式，再尝试location.href
-      console.log('iOS设备：尝试iframe方式打开APP...')
+      // iOS设备：使用iframe方式尝试打开APP
+      console.log('iOS设备：尝试打开APP...')
 
-      // 创建隐藏的iframe
       const iframe = document.createElement('iframe')
       iframe.style.display = 'none'
       iframe.src = scheme
       document.body.appendChild(iframe)
 
-      // 延迟移除iframe
+      // 1秒后移除iframe
       setTimeout(() => {
         if (document.body.contains(iframe)) {
           document.body.removeChild(iframe)
         }
       }, 1000)
 
-      // 延迟后如果APP还没打开，再尝试location.href
+      // 延迟后尝试location.href方式
       setTimeout(() => {
         if (!appOpened && !fallbackExecuted) {
-          console.log('iOS设备：iframe方式无响应，尝试location.href...')
-          window.location.href = scheme
+          console.log('iOS：尝试location.href方式...')
+          try {
+            window.location.href = scheme
+          } catch (e) {
+            console.log('iOS：location.href失败，继续...')
+          }
         }
-      }, 300)
+      }, 1000)
     } else {
-      // Android直接使用location.href
+      // Android设备：直接使用location.href
+      console.log('Android设备：尝试打开APP...')
       window.location.href = scheme
-      console.log('Android: 直接发送Scheme，等待响应...')
     }
   } catch (error) {
-    console.error('发送Scheme失败:', error)
-    // 如果发送失败，直接执行fallback
+    console.error('打开APP失败:', error)
     executeFallback()
     return
   }
 
-  // 延迟检查是否成功打开 - 优化等待时间
-  setTimeout(() => {
-    console.log('⏰ 1秒后检查APP是否打开')
-    if (fallbackExecuted || appOpened) return // 防止重复执行或APP已打开
-
-    // 如果APP已经打开，直接返回
-    if (appOpened) {
-      console.log('✅ APP已打开，无需执行fallback')
-      return
-    }
-
-    // 如果页面被隐藏，说明APP已打开
-    if (document.hidden || (document as any).webkitHidden) {
-      appOpened = true
-      return
-    }
-
-    // 如果用户进行了交互，可能APP已经打开，再等一下
-    if (userInteracted) {
-      console.log('⏳ 用户已交互，可能APP已打开，再等待0.5秒...')
-      setTimeout(() => {
-        if (!fallbackExecuted && !appOpened && !document.hidden) {
-          console.log('⏰ 用户交互后仍未打开，执行fallback')
-          executeFallback()
-        }
-      }, 500)
-      return
-    }
-
-    // 如果页面还在且无用户交互，可能APP正在打开中，再等一下
-    console.log('⏳ 等待APP启动，再等待0.5秒...')
-    setTimeout(() => {
-      if (!fallbackExecuted && !appOpened && !document.hidden) {
-        console.log('⏰ 额外等待后仍未打开，执行fallback')
-        executeFallback()
-      }
-    }, 500)
-  }, 1000) // 1秒后检查
-
-  // 强制fallback保护机制 - 确保最终能跳转
-  setTimeout(() => {
-    if (!fallbackExecuted && !appOpened) {
-      console.log('🛡️ 强制fallback保护机制触发')
-      executeFallback()
-    }
-  }, 3000) // 3秒后强制执行fallback
-
-  // 执行fallback的函数
-  function executeFallback() {
-    if (fallbackExecuted || appOpened) return
-    fallbackExecuted = true
-
-    // 清理所有监听器
-    cleanupListeners()
-
-    // 隐藏加载状态
-    hideLoading()
-
-    console.log('🚀 执行fallback，跳转下载页面')
-    if (deviceInfo.value.isIOS) {
-      console.log('📱 iOS设备，跳转App Store')
-      window.location.href = fallbackUrl
-    } else {
-      console.log('🤖 Android设备，下载APK')
-      window.location.href = fallbackUrl
-    }
+  // 监听页面可见性变化
+  const handleVisibilityChange = () => {
+    checkAppOpened()
   }
 
-  // 清理所有监听器的函数
-  function cleanupListeners() {
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  window.addEventListener('blur', handleBlur)
+
+  // 延迟检查APP是否打开 - iOS给更多时间
+  const checkDelay = deviceInfo.value.isIOS ? 4500 : 2000
+  setTimeout(() => {
+    console.log(`⏰ ${checkDelay / 1000}秒后检查APP状态：`, {
+      appOpened,
+      fallbackExecuted,
+      documentHidden: document.hidden,
+      webkitHidden: (document as any).webkitHidden
+    })
+
+    if (checkAppOpened()) return
+
+    // 如果APP未打开，执行fallback
+    console.log(`⏰ ${checkDelay / 1000}秒后APP未打开，执行fallback`)
+    executeFallback()
+  }, checkDelay)
+
+  // 清理事件监听器
+  setTimeout(() => {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
     window.removeEventListener('blur', handleBlur)
-    document.removeEventListener('click', handleUserInteraction)
-    document.removeEventListener('touchstart', handleUserInteraction)
+  }, checkDelay + 1000)
+
+  // 强制fallback保护机制 - 确保最终能跳转
+  if (deviceInfo.value.isIOS) {
+    setTimeout(() => {
+      if (!fallbackExecuted && !appOpened) {
+        console.log('🛡️ iOS强制fallback保护机制：强制跳转App Store')
+        executeFallback()
+      }
+    }, 6500) // 6.5秒后强制fallback
   }
 }
 
@@ -447,7 +423,7 @@ const showMaskGuide = (message: string) => {
         <template v-if="subTitle">
           <div class="introduce">
             <div class="content">
-              <span class="title">简介:&nbsp;</span>
+              <span class="title">{{ lan === 'zh' ? '简介:' : 'Introduction:' }}&nbsp;</span>
               {{ subTitle }}
               <!-- 推氪AI，是神马工场旗下行业领先的AI数字人智能体平台。平台隶属上海徽源智能科技有限公司、上海推氪智能科技有限公司（VIE架构主体）。公司成立于2020年，核心团队来自腾讯、字节、阿里等知名互联网公司，公司已完成由创业工场、万物为、华山资本、第九城市等VC机构领投的B轮1500万美元融资，公司致力于通过AI科技不断创新探索，为人类提供跨时代的交互体验~ -->
             </div>
@@ -502,9 +478,8 @@ const showMaskGuide = (message: string) => {
           <div class="input_cell" @click.prevent.stop="handleDownloadApp">
             <input
               type="text"
-              disabled
               class="send_input"
-              :placeholder="lan === 'zh' ? '发消息给推氪AI' : 'Send message to Tuikor AI'"
+              :placeholder="lan === 'zh' ? '按住说话' : 'Hold to Talk'"
               enterkeyhint="send"
               value=""
             />
@@ -522,7 +497,7 @@ const showMaskGuide = (message: string) => {
   height: 100vh;
   overflow: hidden;
   width: 100vw;
-  background-color: #1c1d20;
+  background-color: #2a2b2e;
   .home_bg {
     width: 100%;
     height: 100%;
@@ -793,9 +768,9 @@ const showMaskGuide = (message: string) => {
           padding: 0.12rem 0;
           background: linear-gradient(
             90deg,
-            rgba(255, 255, 255, 0.2) 0%,
-            rgba(200, 200, 200, 0.7) 10%,
-            rgba(100, 100, 100, 0.8) 100%
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(100, 100, 100, 0.4) 10%,
+            rgba(50, 50, 50, 0.98) 100%
           );
           height: 0.44rem;
           display: flex; // 添加flex布局
@@ -810,16 +785,15 @@ const showMaskGuide = (message: string) => {
             background: transparent;
             outline: none;
             font-size: 0.16rem;
-            color: rgba(255, 255, 255, 0.9);
-            text-shadow: 0 0 0.01rem rgba(255, 255, 255, 0.8);
-            caret-color: #ffd980;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 1);
             box-sizing: border-box;
             display: block; // 确保input正确显示
             pointer-events: none; // 禁用鼠标事件，让点击事件传递到父级
 
             &::placeholder {
               text-align: center;
-              color: rgba(255, 255, 255, 0.9); // 更亮的灰白色placeholder
+              color: rgba(255, 255, 255, 1); // 更亮的灰白色placeholder
             }
           }
         }
