@@ -1,7 +1,7 @@
 /*
  * @Author: YinXuan
  * @Date: 2023-07-11 12:20:30
- * @LastEditTime: 2025-08-27 14:15:38
+ * @LastEditTime: 2025-08-29 17:39:00
  * @Description: 初始化项目
  */
 import axios, { InternalAxiosRequestConfig, AxiosResponse } from 'axios'

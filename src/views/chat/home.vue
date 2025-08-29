@@ -1,24 +1,31 @@
 <!--
  * @Author: YinXuan
  * @Date: 2025-08-20 13:57:33
- * @LastEditTime: 2025-08-27 18:09:10
+ * @LastEditTime: 2025-08-29 14:56:15
  * @Description: 聊天首页
 -->
 <script setup lang="ts">
-import { getAigcOtherLiveVideos, getAigcOtherLivesList } from '@/api/webPage'
+import { getAigcOtherLiveVideos, getAigcOtherLivesList, getWechatJsapiTicket } from '@/api/webPage'
 import { useRoute } from 'vue-router'
+import wx from 'weixin-js-sdk'
+import VConsole from 'vconsole'
+// 判断是否在微信浏览器中
+const isWeChatBrowser = () => {
+  const userAgent = navigator.userAgent.toLowerCase()
+  return userAgent.indexOf('micromessenger') !== -1
+}
 
 const route = useRoute()
 
 const redirectTo = decodeURIComponent(route.query.redirectTo as string)
 
-// 从 redirectTo 中提取 智能体ID: agentId 和 语言 lan: zh en
+// 从 redirectTo 中提取 智能体ID: agentId 和 语言 language: zh en
 let liveId: any
 let lan: any = ref('zh')
 if (redirectTo && redirectTo.includes('agentId=')) {
   const urlParams = new URLSearchParams(redirectTo.split('?')[1])
   liveId = urlParams.get('agentId') || route.query.agentId
-  lan.value = urlParams.get('lan') || 'zh' // 默认中文
+  lan.value = urlParams.get('language') || 'zh' // 默认中文
 }
 
 let liveData: any = ref([])
@@ -38,29 +45,26 @@ const messageList = ref([
   {
     id: 1,
     type: 'user',
-    content: lan.value === 'zh' ? '发个视频～' : 'Send a video～'
+    content: lan.value === 'zh' ? '发个视频看看吧~' : 'Send a video~'
   },
   {
     id: 2,
     type: 'ai',
     content:
       lan.value === 'zh'
-        ? '哎呀~这么心急可不行呢，让我想想...啊!这张在复古浴室穿黄丝吊带的怎么样?纱袖若隐若现最勾人了~'
-        : 'Oops~ You can’t be too impatient. Let me think... Ah! How about this one in a yellow silk dress with a slit in the bathroom? The sheer sleeves are most alluring~',
+        ? '好的~ 让我想想发哪张... 啊！这张在浴室自拍看看怎么样~'
+        : 'Oops~ You can’t be too impatient. Let me think... Ah! How about this one in a bathroom self-portrait? The sheer sleeves are most alluring~',
     url: 'https://smsaas.oss-cn-hangzhou.aliyuncs.com/document/1754273840880.mp4?x-oss-process=video/snapshot,t_1,f_jpg,m_fast,ar_auto'
   },
   {
     id: 3,
     type: 'user',
-    content: lan.value === 'zh' ? '发个照片～' : 'Send a photo～'
+    content: lan.value === 'zh' ? '不错~ 真听话！#送了个礼物火箭🚀#～' : 'Good job!#Sent a gift rocket🚀#~'
   },
   {
     id: 4,
     type: 'ai',
-    content:
-      lan.value === 'zh'
-        ? '(轻轻歪头)这么想看呀?那给你看这张在海边穿深V挂脖裙的，拎着裙摆笑得超甜~'
-        : '(tilts head cutely)You want to see it? Here, take this one in a deep V-neck halter dress on the beach, holding the skirt and smiling sweetly~',
+    content: lan.value === 'zh' ? '太感谢啦！亲一下~mua~' : 'Thanks so much! Kiss me~mua~',
     url: 'https://smsaas.oss-cn-hangzhou.aliyuncs.com/document/1754036458432.jpeg'
   }
 ])
@@ -80,6 +84,16 @@ onMounted(() => {
   // 检测设备信息
   detectDevice()
 
+  // 初始化vconsole（移动端调试工具）
+  console.log('设备检测结果:', deviceInfo.value)
+  // if (deviceInfo.value.isMobile) {
+  //   console.log('检测到移动设备，正在初始化vConsole...')
+  //   new VConsole()
+  //   console.log('🚀 vConsole已启动，移动端可以查看日志了！')
+  // } else {
+  //   console.log('非移动设备，跳过vConsole初始化')
+  // }
+
   let params = {
     from: 'miniprogram',
     live_id: liveId,
@@ -97,11 +111,13 @@ onMounted(() => {
     id: liveId
   }).then(res => {
     const { data } = res
-    console.log('data', data)
     if (data.length > 0) {
       subTitle.value = data[0].sub_title
     }
   })
+
+  // 初始化微信分享
+  initWechatShare()
 
   // 监听页面可见性变化，当用户切换应用时隐藏提示
   const handlePageVisibilityChange = () => {
@@ -160,6 +176,77 @@ const detectDevice = () => {
     browser,
     isSafari
   }
+}
+
+// 初始化微信分享
+const initWechatShare = async () => {
+  if (!isWeChatBrowser()) {
+    console.log('非微信环境，跳过微信分享配置')
+    return
+  }
+
+  console.log('微信环境，开始配置分享...')
+  const formData = new FormData()
+  // formData.append('page_url', 'https://www.west999.com/info/html/')
+  // 如果需要传递当前页面URL，可以这样：
+  formData.append('page_url', window.location.href)
+
+  const res = await getWechatJsapiTicket(formData)
+  console.log('res', res)
+  const { data } = res
+  const { appId, timestamp, nonceStr, signature } = data
+
+  // 微信分享配置
+  wx.config({
+    debug: false, // 生产环境设为false
+    appId: appId,
+    timestamp: timestamp,
+    nonceStr: nonceStr,
+    signature: signature, // 这里需要后端提供签名，暂时留空
+    jsApiList: [
+      'updateAppMessageShareData', // 分享给朋友
+      'updateTimelineShareData' // 分享到朋友圈
+    ]
+  })
+
+  // 微信SDK准备就绪
+  wx.ready(() => {
+    console.log('微信SDK准备就绪，配置分享内容')
+
+    console.log('link', window.location.href)
+
+    // 分享给朋友
+    wx.updateAppMessageShareData({
+      title: '推氪AI',
+      desc: '全天候与你的偶像聊天',
+      link: window.location.href,
+      imgUrl: 'https://www.tuikeai.com/assets/saas/img/tuikeai/logo.png?1',
+      success: () => {
+        console.log('分享给朋友配置成功')
+      },
+      fail: (err: any) => {
+        console.error('分享给朋友配置失败:', err)
+      }
+    })
+
+    // 分享到朋友圈
+    wx.updateTimelineShareData({
+      title: lan.value === 'zh' ? '推氪AI' : 'Tuikor AI',
+      link: window.location.href,
+      imgUrl: 'https://www.tuikeai.com/assets/saas/img/tuikeai/logo.png?1',
+      success: () => {
+        console.log('分享到朋友圈配置成功')
+      },
+      fail: (err: any) => {
+        console.error('分享到朋友圈配置失败:', err)
+      }
+    })
+  })
+
+  // 微信SDK配置失败
+  wx.error((err: any) => {
+    console.error('微信SDK配置失败:', err)
+  })
 }
 
 // 智能打开或下载APP
@@ -673,7 +760,7 @@ const showMaskGuide = (message: string) => {
                 background-size: cover;
                 background-position: center;
                 background-repeat: no-repeat;
-                filter: blur(0.02rem) brightness(0.7);
+                filter: blur(0.1rem) brightness(0.4);
                 position: absolute;
                 top: 0;
                 left: 0;
@@ -766,12 +853,7 @@ const showMaskGuide = (message: string) => {
           flex: 1;
           border-radius: 0.12rem;
           padding: 0.12rem 0;
-          background: linear-gradient(
-            90deg,
-            rgba(255, 255, 255, 0.1) 0%,
-            rgba(100, 100, 100, 0.4) 10%,
-            rgba(50, 50, 50, 0.98) 100%
-          );
+          background: rgba(50, 50, 50, 0.68);
           height: 0.44rem;
           display: flex; // 添加flex布局
           align-items: center; // 垂直居中

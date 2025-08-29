@@ -62,6 +62,9 @@ importers:
       qrcode.vue:
         specifier: ^3.4.1
         version: 3.6.0(vue@3.5.18(typescript@5.9.2))
+      vconsole:
+        specifier: ^3.15.1
+        version: 3.15.1
       vue:
         specifier: ^3.3.4
         version: 3.5.18(typescript@5.9.2)
@@ -74,6 +77,9 @@ importers:
       vue3-baidu-map-gl:
         specifier: ^2.6.3
         version: 2.6.5(vue@3.5.18(typescript@5.9.2))
+      weixin-js-sdk:
+        specifier: ^1.6.5
+        version: 1.6.5
     devDependencies:
       '@commitlint/cli':
         specifier: ^17.6.3
@@ -1788,6 +1794,10 @@ packages:
     resolution: {integrity: sha512-XgZ0pFcakEUlbwQEVNg3+QAis1FyTL3Qel9FYy8pSkQqoG3PNoT0bOCQtOXcOkur21r2Eq2kI+IE+gsmAEVlYw==}
     engines: {node: '>=0.10.0'}
 
+  copy-text-to-clipboard@3.2.0:
+    resolution: {integrity: sha512-RnJFp1XR/LOBDckxTib5Qjr/PMfkatD0MUCQgdpqS8MdKiNUzBjAQBEN6oUy+jW7LI93BBG3DtMB2KOOKpGs2Q==}
+    engines: {node: '>=12'}
+
   core-js-compat@3.45.0:
     resolution: {integrity: sha512-gRoVMBawZg0OnxaVv3zpqLLxaHmsubEGyTnqdpI/CEBvX4JadI1dMSHxagThprYRtSVbuQxvi6iUatdPxohHpA==}
 
@@ -3081,6 +3091,9 @@ packages:
   muggle-string@0.3.1:
     resolution: {integrity: sha512-ckmWDJjphvd/FvZawgygcUeQCxzvohjFO5RxTjj4eq8kw359gFF3E1brjfI+viLMxss5JrHTDRHZvu2/tuy0Qg==}
 
+  mutation-observer@1.0.3:
+    resolution: {integrity: sha512-M/O/4rF2h776hV7qGMZUH3utZLO/jK7p8rnNgGkjKUw8zCGjRQPxB8z6+5l8+VjRUQ3dNYu4vjqXYLr+U8ZVNA==}
+
   nanoid@3.3.11:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
@@ -4165,6 +4178,9 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
+  vconsole@3.15.1:
+    resolution: {integrity: sha512-KH8XLdrq9T5YHJO/ixrjivHfmF2PC2CdVoK6RWZB4yftMykYIaXY1mxZYAic70vADM54kpMQF+dYmvl5NRNy1g==}
+
   vite-plugin-svg-icons@2.0.1:
     resolution: {integrity: sha512-6ktD+DhV6Rz3VtedYvBKKVA2eXF+sAQVaKkKLDSqGUfnhqXl3bj5PPkVTl3VexfTuZy66PmINi8Q6eFnVfRUmA==}
     peerDependencies:
@@ -4264,6 +4280,9 @@ packages:
 
   webworkify-webpack@2.1.5:
     resolution: {integrity: sha512-2akF8FIyUvbiBBdD+RoHpoTbHMQF2HwjcxfDvgztAX5YwbZNyrtfUMgvfgFVsgDhDPVTlkbb5vyasqDHfIDPQw==}
+
+  weixin-js-sdk@1.6.5:
+    resolution: {integrity: sha512-Gph1WAWB2YN/lMOFB/ymb+hbU/wYazzJgu6PMMktCy9cSCeW5wA6Zwt0dpahJbJ+RJEwtTv2x9iIu0U4enuVSQ==}
 
   which-boxed-primitive@1.1.1:
     resolution: {integrity: sha512-TbX3mj8n0odCBFVlY8AxkqcHASw3L60jIuF8jFP78az3C2YhmGvqbHBpAjTRH2/xqYunrJ9g1jSyjCjpoWzIAA==}
@@ -6236,6 +6255,8 @@ snapshots:
 
   copy-descriptor@0.1.1: {}
 
+  copy-text-to-clipboard@3.2.0: {}
+
   core-js-compat@3.45.0:
     dependencies:
       browserslist: 4.25.3
@@ -7630,6 +7651,8 @@ snapshots:
 
   muggle-string@0.3.1: {}
 
+  mutation-observer@1.0.3: {}
+
   nanoid@3.3.11: {}
 
   nanomatch@1.2.13:
@@ -8855,6 +8878,13 @@ snapshots:
 
   vary@1.1.2: {}
 
+  vconsole@3.15.1:
+    dependencies:
+      '@babel/runtime': 7.28.3
+      copy-text-to-clipboard: 3.2.0
+      core-js: 3.45.0
+      mutation-observer: 1.0.3
+
   vite-plugin-svg-icons@2.0.1(vite@4.5.14(@types/node@20.5.1)(sass@1.90.0)(terser@5.43.1)):
     dependencies:
       '@types/svgo': 2.6.4
@@ -8940,6 +8970,8 @@ snapshots:
   webpack-virtual-modules@0.6.2: {}
 
   webworkify-webpack@2.1.5: {}
+
+  weixin-js-sdk@1.6.5: {}
 
   which-boxed-primitive@1.1.1:
     dependencies:

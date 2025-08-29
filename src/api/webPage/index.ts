@@ -1,7 +1,7 @@
 /*
  * @Author: YinXuan/WUYuHan
  * @Date: 2023-10-24 09:36:33
- * @LastEditTime: 2025-08-27 10:15:25
+ * @LastEditTime: 2025-08-28 15:01:26
  * @Description: WebPage API
  */
 import reqWeb from '@/utils/reqWeb'
@@ -38,6 +38,20 @@ export function getAigcOtherLivesList(queryParams: any) {
     url: '/api/aigc_other_lives_list/',
     method: 'get',
     params: queryParams
+  })
+}
+
+/**
+ * 获取微信jsapi ticket
+ */
+export function getWechatJsapiTicket(data: any) {
+  return reqWeb({
+    url: '/api/wechat_jsapi_ticket/',
+    method: 'post',
+    data: data,
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
   })
 }
 
